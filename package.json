@@ -1,0 +1,11 @@
+﻿{
+  "name": "OpenSeadragonImaging",
+  "version": "1.0.0",
+  "description": "OpenSeadragonImaging provides imaging add-ons for OpenSeadragon",
+  "devDependencies": {
+    "grunt": "~0.4.2",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-git-describe": "~2.3.2",
+    "grunt-jsdoc": "~0.5.1"
+  }
+}
