@@ -3,6 +3,7 @@ OpenSeadragonImaging
 
 Documentation and build tools for the OpenSeadragonImaging suite:
 
-*[OpenSeadragonViewerInputHook](https://github.com/msalsbery/OpenSeadragonViewerInputHook)
-*[OpenSeadragonImagingHelper](https://github.com/msalsbery/OpenSeadragonImagingHelper)
-*[OpenSeadragonAnnoHost](https://github.com/msalsbery/OpenSeadragonAnnoHost)
+
+1. [OpenSeadragonViewerInputHook](https://github.com/msalsbery/OpenSeadragonViewerInputHook)
+2. [OpenSeadragonImagingHelper](https://github.com/msalsbery/OpenSeadragonImagingHelper)
+3. [OpenSeadragonAnnoHost](https://github.com/msalsbery/OpenSeadragonAnnoHost)
