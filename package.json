@@ -1,11 +1,20 @@
-﻿{
+{
   "name": "OpenSeadragonImaging",
   "version": "1.0.0",
   "description": "OpenSeadragonImaging provides imaging add-ons for OpenSeadragon",
+  "engines": {
+    "node": ">= 1.0.0",
+    "npm": ">= 1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/msalsbery/OpenSeadragonImaging.git"
+  },
+  "license": "MIT",
   "devDependencies": {
-    "grunt": "~0.4.2",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-git-describe": "~2.3.2",
-    "grunt-jsdoc": "~0.5.1"
+    "grunt": "^1.0.3",
+    "grunt-contrib-clean": "^2.0.0",
+    "grunt-git-describe": "^2.4.4",
+    "grunt-jsdoc": "^2.3.0"
   }
 }
