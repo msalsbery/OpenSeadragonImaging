@@ -1,4 +1,4 @@
-OpenSeadragonImaging
+## OpenSeadragonImaging
 [![Gitter](https://badges.gitter.im/Join_Chat.svg)](https://gitter.im/msalsbery/OpenSeadragonImaging?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Documentation and build tools for the OpenSeadragonImaging suite:
