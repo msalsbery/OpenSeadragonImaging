@@ -1,6 +1,7 @@
 /* eslint-env node, es6 */
 
 module.exports = function (grunt) {
+	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-git-describe');
 	grunt.loadNpmTasks('grunt-jsdoc');
