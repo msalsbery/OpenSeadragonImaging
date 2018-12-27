@@ -43,6 +43,8 @@ var App = {
 		// 			setHeaders: function(res, path, stat) {}
 		// 		}
 		this.app.use(urlPathRoot + '/', express.static(path.join(__dirname, '../site')));
+		this.app.use(urlPathRoot + '/builds', express.static(path.join(__dirname, '../builds')));
+		this.app.use(urlPathRoot + '/docs', express.static(path.join(__dirname, '../docs')));
 		this.app.use(urlPathRoot + '/demo', express.static(path.join(__dirname, '../demo')));
 	},
 
