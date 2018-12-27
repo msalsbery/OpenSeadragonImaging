@@ -2,77 +2,57 @@
 
 module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-copy');
+	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-clean');
-	grunt.loadNpmTasks('grunt-git-describe');
-	grunt.loadNpmTasks('grunt-jsdoc');
 
-	var packageJson = grunt.file.readJSON('package.json'),
-		docsSources = [
-			'docs/docs-globals.js',
-			'../OpenSeadragonViewerInputHook/build/openseadragonviewerinputhook/openseadragon-viewerinputhook.js',
-			'../OpenSeadragonImagingHelper/build/openseadragonimaginghelper/openseadragon-imaginghelper.js',
-			'../OpenSeadragonAnnoHost/build/openseadragonannohost/openseadragon-annohost.js',
-			'docs/INDEX.md'
-		],
-		buildDir = 'build/',
-		docsDir = buildDir + 'docs/',
-		publishDir = '../msalsbery.github.io/builds/';
+	var packageJson = grunt.file.readJSON('package.json');
+	var publishRepoDir = '../msalsbery.github.io/openseadragon-imaging/';
+
+	var publishRepoCleanDirs = [
+		publishRepoDir + 'builds/',
+		publishRepoDir + 'demo/',
+		publishRepoDir + 'docs/',
+		publishRepoDir + 'site/'
+	];
+	var publishSources = ['builds/**', 'demo/**', 'docs/**', 'site/**'];
 
 	grunt.initConfig({
 		pkg: packageJson,
 		imagingVersion: {
-			versionStr: packageJson.version,
-			major: parseInt(packageJson.version.split('.')[0], 10),
-			minor: parseInt(packageJson.version.split('.')[1], 10),
-			revision: parseInt(packageJson.version.split('.')[2], 10)
-		},
-		'git-describe': {
-			build: {
-				options: {
-					prop: 'gitInfo'
-				}
-			}
+			versionStr: packageJson.version
 		},
 		clean: {
-			build: {
-				src: [buildDir]
-			},
-			doc: {
-				src: [docsDir]
-			}
-		},
-		jsdoc: {
-			dist: {
-				src: docsSources,
+			prod: {
+				src: publishRepoCleanDirs,
 				options: {
-					destination: docsDir,
-					//template: "node_modules/docstrap/template",
-					configure: 'doc-conf.json',
-					private: false
+					force: true
 				}
 			}
-		}
+		},
+		copy: {
+			prod: {
+				files: [
+					{
+						expand: true,
+						cwd: './',
+						src: publishSources,
+						dest: publishRepoDir
+					}
+				]
+			}
+		}//,
+		// watch: {
+		// 	files: ['Gruntfile.js', srcDir + '*.js'],
+		// 	tasks: ['build']
+		// 	//options: {
+		// 	//    event: ['added', 'deleted'], //'all', 'changed', 'added', 'deleted'
+		// 	//}
+		// }
 	});
 
-	// // Copies built source to demo site folder
-	// grunt.registerTask('publish', function () {
-	//     grunt.file.copy(distribution, publishDir + distributionName);
-	//     grunt.file.copy(minified, publishDir + minifiedName);
-	// });
-
-	// Build task(s).
-	grunt.registerTask('build', [
-		'clean:build',
-		'jshint:beforeconcat',
-		'git-describe',
-		'concat',
-		'jshint:afterconcat',
-		'uglify'
-	]);
-
-	// Documentation task(s).
-	grunt.registerTask('doc', ['clean:doc', 'jsdoc']);
+	// Copies home site, demo site, builds, and docs to msalsbery.github.io repo folder
+	grunt.registerTask('publish', ['clean:prod', 'copy:prod']);
 
 	// Default task(s).
-	grunt.registerTask('default', ['build']);
+	grunt.registerTask('default', ['publish']);
 };
