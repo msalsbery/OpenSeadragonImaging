@@ -43,9 +43,21 @@
 		// minZoomLevel: 0.001,
 		// maxZoomLevel: 10,
 		// zoomPerClick: 1.4,
+		minZoomImageRatio: 0,
+		maxZoomPixelRatio: Infinity,
+		smoothTileEdgesMinZoom: Infinity,
+		//------------------
+		// gestureSettingsMouse: {
+		// 	flickEnabled: true
+		// },
+		// gestureSettingsTouch: {
+		// 	pinchRotate: true
+		// },
 		//------------------
 		showNavigationControl: true,
 		navigationControlAnchor: OpenSeadragon.ControlAnchor.BOTTOM_LEFT,
+		// showRotationControl: true,
+		// showFlipControl: true,
 		//------------------
 		showNavigator: true,
 		// navigatorSizeRatio: 0.25,
@@ -53,12 +65,12 @@
 		navigatorAutoResize: false,
 		//------------------
 		sequenceMode: true,
-		// initialPage: 1,
+		// initialPage: 3,
 		// preserveViewport: true,
 		// preserveOverlays: false,
 		showSequenceControl: true,
 		sequenceControlAnchor: OpenSeadragon.ControlAnchor.BOTTOM_LEFT,
-		// showReferenceStrip: false,
+		// showReferenceStrip: true,
 		// referenceStripScroll: 'horizontal',
 		// referenceStripElement: null,
 		// referenceStripHeight: null,
@@ -75,27 +87,58 @@
 		//------------------
 		tileSources: tileSources
 	});
+	// // eslint-disable-line no-unused-vars
+	// var annoHost = viewer.activateAnnoHost({
+	// 	worldIndex: 0,
+	// 	onImageViewChanged: onImageViewChanged
+	// });
+	// // eslint-disable-line no-unused-vars
 	// eslint-disable-line no-unused-vars
-	var imagingHelper = viewer.activateImagingHelper({
+	var annoHost = viewer.activateImagingHelper({
 		worldIndex: 0,
 		onImageViewChanged: onImageViewChanged
 	});
 	// eslint-disable-line no-unused-vars
-	var viewerInputHook = viewer.addViewerInputHook({hooks: [
+	viewer.addViewerInputHook({hooks: [
 		{tracker: 'viewer', handler: 'moveHandler', hookHandler: onHookOsdViewerMove},
 		{tracker: 'viewer', handler: 'scrollHandler', hookHandler: onHookOsdViewerScroll},
 		{tracker: 'viewer', handler: 'clickHandler', hookHandler: onHookOsdViewerClick}
 	]});
 	var _$osdCanvas = null;
-	var _$svgOverlay = $('.imgvwrSVG');
+	//var _$annoHostSvg = $('.osdi-annohost-svg');
 
-	// Example SVG annotation overlay.  We use these observables to keep the example annotation sync'd with the image zoom/pan
-	var annoGroupTranslateX = ko.observable(0.0),
-		annoGroupTranslateY = ko.observable(0.0),
-		annoGroupScale = ko.observable(1.0),
-		annoGroupTransform = ko.computed(function () {
-			return 'translate(' + annoGroupTranslateX() + ',' + annoGroupTranslateY() + ') scale(' + annoGroupScale() + ')';
-		}, this);
+	// Workaround for Edge browser where SVG foreignObject elements don't rescale properly via scale transform
+	//  (Issue: https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/4320441/)
+	void(new MutationObserver(function (muts) {
+		for (var i = muts.length; i--;) {
+			var mut = muts[i], objs = mut.target.querySelectorAll('foreignObject');
+			for (var j = objs.length; j--;) {
+				var obj = objs[j];
+				// var val = obj.style.display;
+				// obj.style.display = 'none';
+				// obj.getBBox();
+				// obj.style.display = val;
+				if (obj.style) {
+					var val = obj.style.visibility;
+					obj.style.visibility = 'hidden';
+					obj.getBBox();
+					obj.style.visibility = val;
+				}
+			}
+		}
+	}).observe(document.documentElement, {attributes: true, attributeFilter: ['transform'], subtree: true}));
+
+	//TODO Need workaround for Edge browser where vector-effect="non-scaling-stroke" is not honored
+	//  (Issue: https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/7326047/
+
+	// // Example SVG annotation overlay.  We use these observables to keep the example annotation sync'd with the image zoom/pan
+	// var annoGroupTranslateX = ko.observable(0.0),
+	// 	annoGroupTranslateY = ko.observable(0.0),
+	// 	annoGroupScale = ko.observable(1.0),
+	// 	annoGroupTransform = ko.computed(function () {
+	// 		return 'translate(' + annoGroupTranslateX() + ',' + annoGroupTranslateY() + ') scale(' + annoGroupScale() + ')';
+	// 		//return 'translate(' + annoGroupTranslateX() + ',' + annoGroupTranslateY() + ')';
+	// 	}, this);
 
 	viewer.addHandler('open', function (event) {
 		_$osdCanvas = $(viewer.canvas);
@@ -116,7 +159,7 @@
 			_navExpanderDoExpand(true);
 		}
 
-		_$svgOverlay.css( 'visibility', 'visible');
+		//_$annoHostSvg.css( 'visibility', 'visible');
 
 		//// Example OpenSeadragon overlay
 		//var olDiv = document.createElement('div');
@@ -132,16 +175,90 @@
 		//    //}
 		//});
 
-		//// Example OpenSeadragon overlay
-		//var img = document.createElement('img');
-		//img.src = 'content/images/openseadragon/next_rest.png';
-		//var point = new OpenSeadragon.Point(0.5, 0.5)
-		//viewer.drawer.addOverlay(img, point);
+		// Example OpenSeadragon overlay
+		// var img = document.createElement('img');
+		// img.src = 'content/images/openseadragon/next_rest.png';
+		var canvasElement;
+		var m_context;
+		canvasElement = document.createElement('canvas');
+		canvasElement.width = 200;
+		canvasElement.height = 200;
+		m_context = canvasElement.getContext('2d');
+		m_context.fillStyle = '#FF0000';
+		m_context.fillRect(4, 4, 192, 192);
+		//--------------------------------------------------
+		// //TODO this should be possible...fix in OSD!
+		// var overlay = new OpenSeadragon.Overlay({
+		// 	element: canvasElement,
+		// 	location: new OpenSeadragon.Point(0.02, 0.02),
+		// 	placement: OpenSeadragon.Placement.TOP_LEFT,
+		// 	//onDraw: , // OnDrawCallback(position, size, element)
+		// 	checkResize: false,
+		// 	//width: ,
+		// 	//height: ,
+		// 	rotationMode: OpenSeadragon.OverlayRotationMode.EXACT // NO_ROTATION, EXACT, BOUNDING_BOX
+		// });
+		// viewer.addOverlay(overlay);
+		//--------------------------------------------------
+		viewer.addOverlay(canvasElement,
+				new OpenSeadragon.Point(0.02, 0.02),
+				OpenSeadragon.Placement.TOP_LEFT);
+		var originalPos;
+		new OpenSeadragon.MouseTracker({
+			element: canvasElement,
+			pressHandler: function (event) {
+				originalPos = ;
+			},
+			dragHandler: function (event) {
+				// let windowCoords = new OpenSeadragon.Point(event.originalEvent.x, event.originalEvent.y);
+				// let viewportCoords = viewer.viewport.windowToViewportCoordinates(windowCoords);
+				// let overlay = viewer.getOverlayById(this.element);
+
+				// //todo: somehow calculate these values to update the overlay size as the user drags
+				// deltax=0;
+				// deltay=0;
+				// let r = new OpenSeadragon.Rect(viewportCoords.x, viewportCoords.y, overlay.width+deltax, overlay.height+deltax);
+				// overlay.update(r, OpenSeadragon.Placement.CENTER);
+				// overlay.drawHTML(this.element.parentNode, viewer.viewport);
+
+				// console.log("drag delta: " + event.delta + " viewportCoords: " + viewportCoords + "windowCoords: " + windowCoords);
+			}
+		}).setTracking(true);
+
+		// Example OpenSeadragon overlays
+		// var locPoint = new OpenSeadragon.Point(0.02, 0.02);
+		// var locPointPlus = new OpenSeadragon.Point(0.02, 0.02);
+		// var overlay;
+		// var m_canvas;
+		// var m_context;
+		// for (var x = 0; x < 50; x++) {
+		// 	m_canvas = document.createElement('canvas');
+		// 	m_canvas.width = 200;
+		// 	m_canvas.height = 200;
+		// 	m_context = m_canvas.getContext('2d');
+		// 	m_context.fillStyle = '#FF0000';
+		// 	m_context.fillRect(4, 4, 192, 192);
+		// 	// m_context.moveTo(p1.x, p1.y);
+		// 	// m_context.lineTo(p2.x, p2.y);
+		// 	// m_context.stroke();
+		// 	overlay = new OpenSeadragon.Overlay({
+		// 		element: m_canvas,
+		// 		location: locPoint,
+		// 		placement: OpenSeadragon.Placement.TOP_LEFT,
+		// 		//onDraw: , // OnDrawCallback(position, size, element)
+		// 		checkResize: false,
+		// 		//width: ,
+		// 		//height: ,
+		// 		rotationMode: OpenSeadragon.OverlayRotationMode.EXACT // NO_ROTATION, EXACT, BOUNDING_BOX
+		// 	});
+		// 	viewer.addOverlay(overlay);
+		// 	locPoint = locPoint.plus(locPointPlus);
+		// }
 	});
 
 	viewer.addHandler('close', function (event) {
 		_$navExpander.css( 'visibility', 'hidden');
-		_$svgOverlay.css( 'visibility', 'hidden');
+		//_$annoHostSvg.css( 'visibility', 'hidden');
 		outputVM.haveImage(false);
 		_$osdCanvas.off('mouseenter.osdimaginghelper', onOsdCanvasMouseEnter);
 		_$osdCanvas.off('mousemove.osdimaginghelper', onOsdCanvasMouseMove);
@@ -151,10 +268,10 @@
 
 	viewer.addHandler('navigator-scroll', function (event) {
 		if (event.scroll > 0) {
-			imagingHelper.zoomIn();
+			annoHost.zoomIn();
 		}
 		else {
-			imagingHelper.zoomOut();
+			annoHost.zoomOut();
 		}
 	});
 
@@ -162,7 +279,7 @@
 		if (event.fullPage) {
 			// Going to full-page mode...remove our bound DOM elements
 			vm.outputVM(null);
-			vm.svgOverlayVM(null);
+			//vm.svgOverlayVM(null);
 		}
 	});
 
@@ -170,8 +287,8 @@
 		if (!event.fullPage) {
 			// Exited full-page mode...restore our bound DOM elements
 			vm.outputVM(outputVM);
-			vm.svgOverlayVM(svgOverlayVM);
-			_$svgOverlay.css( 'visibility', 'visible');
+			//vm.svgOverlayVM(svgOverlayVM);
+			//_$annoHostSvg.css( 'visibility', 'visible');
 		}
 	});
 
@@ -179,7 +296,7 @@
 		if (event.fullScreen) {
 			// Going to full-screen mode...remove our bound DOM elements
 			vm.outputVM(null);
-			vm.svgOverlayVM(null);
+			//vm.svgOverlayVM(null);
 		}
 	});
 
@@ -187,19 +304,19 @@
 		if (!event.fullScreen) {
 			// Exited full-screen mode...restore our bound DOM elements
 			vm.outputVM(outputVM);
-			vm.svgOverlayVM(svgOverlayVM);
-			_$svgOverlay.css( 'visibility', 'visible');
+			//vm.svgOverlayVM(svgOverlayVM);
+			//_$annoHostSvg.css( 'visibility', 'visible');
 		}
 	});
 
 	function setMinMaxZoomForImage() {
-		var minzoomX = 50.0 / imagingHelper.imgWidth;
-		var minzoomY = 50.0 / imagingHelper.imgHeight;
+		var minzoomX = 50.0 / annoHost.imgWidth;
+		var minzoomY = 50.0 / annoHost.imgHeight;
 		var minZoom = Math.min(minzoomX, minzoomY);
 		var maxZoom = 10.0;
-		imagingHelper.setMinZoom(minZoom);
-		imagingHelper.setMaxZoom(maxZoom);
-		imagingHelper.setZoomStepPercent(35);
+		annoHost.setMinZoom(minZoom);
+		annoHost.setMaxZoom(maxZoom);
+		annoHost.setZoomStepPercent(35);
 	}
 
 	function onImageViewChanged(event) {
@@ -212,12 +329,12 @@
 		updateImgViewerScreenCoordinatesVM();
 		updateImgViewerDataCoordinatesVM();
 
-		// Example SVG annotation overlay - keep the example annotation sync'd with the image zoom/pan
-		//var p = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
-		var p = imagingHelper.logicalToPhysicalPoint(new OpenSeadragon.Point(0, 0));
-		annoGroupTranslateX(p.x);
-		annoGroupTranslateY(p.y);
-		annoGroupScale(imagingHelper.getZoomFactor());
+		// // Example SVG annotation overlay - keep the example annotation sync'd with the image zoom/pan
+		// //var p = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
+		// var p = annoHost.logicalToPhysicalPoint(new OpenSeadragon.Point(0, 0));
+		// annoGroupTranslateX(p.x);
+		// annoGroupTranslateY(p.y);
+		// annoGroupScale(annoHost.getZoomFactor());
 	}
 
 	function onHookOsdViewerMove(event) {
@@ -235,12 +352,12 @@
 		// set event.stopHandlers = true to prevent any more handlers in the chain from being called
 		// set event.stopBubbling = true to prevent the original event from bubbling
 		// set event.preventDefaultAction = true to prevent viewer's default action
-		var logPoint = imagingHelper.physicalToLogicalPoint(event.position);
+		var logPoint = annoHost.physicalToLogicalPoint(event.position);
 		if (event.scroll > 0) {
-			imagingHelper.zoomInAboutLogicalPoint(logPoint);
+			annoHost.zoomInAboutLogicalPoint(logPoint);
 		}
 		else {
-			imagingHelper.zoomOutAboutLogicalPoint(logPoint);
+			annoHost.zoomOutAboutLogicalPoint(logPoint);
 		}
 		event.stopBubbling = true;
 		event.preventDefaultAction = true;
@@ -251,12 +368,12 @@
 		// set event.stopBubbling = true to prevent the original event from bubbling
 		// set event.preventDefaultAction = true to prevent viewer's default action
 		if (event.quick) {
-			var logPoint = imagingHelper.physicalToLogicalPoint(event.position);
+			var logPoint = annoHost.physicalToLogicalPoint(event.position);
 			if (event.shift) {
-				imagingHelper.zoomOutAboutLogicalPoint(logPoint);
+				annoHost.zoomOutAboutLogicalPoint(logPoint);
 			}
 			else {
-				imagingHelper.zoomInAboutLogicalPoint(logPoint);
+				annoHost.zoomInAboutLogicalPoint(logPoint);
 			}
 		}
 		event.stopBubbling = true;
@@ -292,11 +409,11 @@
 
 	function updateImageVM() {
 		if (outputVM.haveImage()) {
-			outputVM.imgWidth(imagingHelper.imgWidth);
-			outputVM.imgHeight(imagingHelper.imgHeight);
-			outputVM.imgAspectRatio(imagingHelper.imgAspectRatio);
-			outputVM.minZoom(imagingHelper.getMinZoom());
-			outputVM.maxZoom(imagingHelper.getMaxZoom());
+			outputVM.imgWidth(annoHost.imgWidth);
+			outputVM.imgHeight(annoHost.imgHeight);
+			outputVM.imgAspectRatio(annoHost.imgAspectRatio);
+			outputVM.minZoom(annoHost.getMinZoom());
+			outputVM.maxZoom(annoHost.getMaxZoom());
 		}
 	}
 
@@ -320,43 +437,43 @@
 			outputVM.osdTiledImageBoundsWidth(boundsTiledImageRect.width);
 			outputVM.osdTiledImageBoundsHeight(boundsTiledImageRect.height);
 
-			outputVM.zoomFactor(imagingHelper.getZoomFactor());
-			outputVM.viewportWidth(imagingHelper._viewportWidth);
-			outputVM.viewportHeight(imagingHelper._viewportHeight);
-			outputVM.viewportOriginX(imagingHelper._viewportOrigin.x);
-			outputVM.viewportOriginY(imagingHelper._viewportOrigin.y);
-			outputVM.viewportCenterX(imagingHelper._viewportCenter.x);
-			outputVM.viewportCenterY(imagingHelper._viewportCenter.y);
+			outputVM.zoomFactor(annoHost.getZoomFactor());
+			outputVM.viewportWidth(annoHost._viewportWidth);
+			outputVM.viewportHeight(annoHost._viewportHeight);
+			outputVM.viewportOriginX(annoHost._viewportOrigin.x);
+			outputVM.viewportOriginY(annoHost._viewportOrigin.y);
+			outputVM.viewportCenterX(annoHost._viewportCenter.x);
+			outputVM.viewportCenterY(annoHost._viewportCenter.y);
 		}
 	}
 
 	function updateImgViewerScreenCoordinatesVM() {
 		if (outputVM.haveImage() && outputVM.haveMouse()) {
-			var logX = imagingHelper.physicalToLogicalX(outputVM.mouseRelativeX());
-			var logY = imagingHelper.physicalToLogicalY(outputVM.mouseRelativeY());
+			var logX = annoHost.physicalToLogicalX(outputVM.mouseRelativeX());
+			var logY = annoHost.physicalToLogicalY(outputVM.mouseRelativeY());
 			outputVM.physicalToLogicalX(logX);
 			outputVM.physicalToLogicalY(logY);
-			outputVM.logicalToPhysicalX(imagingHelper.logicalToPhysicalX(logX));
-			outputVM.logicalToPhysicalY(imagingHelper.logicalToPhysicalY(logY));
-			var dataX = imagingHelper.physicalToDataX( outputVM.mouseRelativeX());
-			var dataY = imagingHelper.physicalToDataY( outputVM.mouseRelativeY());
+			outputVM.logicalToPhysicalX(annoHost.logicalToPhysicalX(logX));
+			outputVM.logicalToPhysicalY(annoHost.logicalToPhysicalY(logY));
+			var dataX = annoHost.physicalToDataX( outputVM.mouseRelativeX());
+			var dataY = annoHost.physicalToDataY( outputVM.mouseRelativeY());
 			outputVM.physicalToDataX(dataX);
 			outputVM.physicalToDataY(dataY);
-			outputVM.dataToPhysicalX(imagingHelper.dataToPhysicalX(dataX));
-			outputVM.dataToPhysicalY(imagingHelper.dataToPhysicalY(dataY));
+			outputVM.dataToPhysicalX(annoHost.dataToPhysicalX(dataX));
+			outputVM.dataToPhysicalY(annoHost.dataToPhysicalY(dataY));
 		}
 	}
 
 	function updateImgViewerDataCoordinatesVM() {
 		if (outputVM.haveImage()) {
-			outputVM.logicalToDataTLX(imagingHelper.logicalToDataX(0.0));
-			outputVM.logicalToDataTLY(imagingHelper.logicalToDataY(0.0));
-			outputVM.logicalToDataBRX(imagingHelper.logicalToDataX(1.0));
-			outputVM.logicalToDataBRY(imagingHelper.logicalToDataY(1.0));
-			outputVM.dataToLogicalTLX(imagingHelper.dataToLogicalX(0));
-			outputVM.dataToLogicalTLY(imagingHelper.dataToLogicalY(0));
-			outputVM.dataToLogicalBRX(imagingHelper.dataToLogicalX(imagingHelper.imgWidth));
-			outputVM.dataToLogicalBRY(imagingHelper.dataToLogicalY(imagingHelper.imgHeight));
+			outputVM.logicalToDataTLX(annoHost.logicalToDataX(0.0));
+			outputVM.logicalToDataTLY(annoHost.logicalToDataY(0.0));
+			outputVM.logicalToDataBRX(annoHost.logicalToDataX(1.0));
+			outputVM.logicalToDataBRY(annoHost.logicalToDataY(1.0));
+			outputVM.dataToLogicalTLX(annoHost.dataToLogicalX(0));
+			outputVM.dataToLogicalTLY(annoHost.dataToLogicalY(0));
+			outputVM.dataToLogicalBRX(annoHost.dataToLogicalX(annoHost.imgWidth));
+			outputVM.dataToLogicalBRY(annoHost.dataToLogicalY(annoHost.imgHeight));
 		}
 	}
 
@@ -370,9 +487,9 @@
 
 		$('.viewer-container').css('height', $('.output-container').height());
 
-		if (viewer && imagingHelper && !viewer.autoResize) {
+		if (viewer && annoHost && !viewer.autoResize) {
 			// We're handling viewer resizing ourselves. Let the ImagingHelper do it.
-			imagingHelper.notifyResize();
+			annoHost.notifyResize();
 		}
 	}
 
@@ -510,15 +627,15 @@
 		dataToLogicalBRY: ko.observable(0)
 	};
 
-	var svgOverlayVM = {
-		annoGroupTransform: annoGroupTransform
-	};
+	// var svgOverlayVM = {
+	// 	annoGroupTransform: annoGroupTransform
+	// };
 
 	var vm = {
 		appTitle: ko.observable(appTitle),
 		appDesc: ko.observable(appDesc),
-		outputVM: ko.observable(outputVM),
-		svgOverlayVM: ko.observable(svgOverlayVM)
+		outputVM: ko.observable(outputVM)//,
+		//svgOverlayVM: ko.observable(svgOverlayVM)
 	};
 
 	ko.applyBindings(vm);

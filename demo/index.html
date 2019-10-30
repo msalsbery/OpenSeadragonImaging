@@ -16,6 +16,7 @@
 		<script type="text/javascript" src="lib/openseadragon.js"></script>
 		<script type="text/javascript" src="lib/openseadragon-imaginghelper.js"></script>
 		<script type="text/javascript" src="lib/openseadragon-viewerinputhook.js"></script>
+		<!-- <script type="text/javascript" src="lib/openseadragon-annohost.js"></script> -->
 
 		<!-- <link rel="stylesheet" type="text/css" href="content/style/jquery-ui-1.10.3.custom.min.css" /> -->
 		<link
@@ -50,7 +51,7 @@
 								style="font-size:small;"
 							></span>
 							<div class="btn-group pull-right">
-								<a class="btn dropdown-toggle" data-toggle="dropdown" href="#"
+								<a class="btn dropdown-toggle" data-toggle="dropdown" href=""
 									>Links...<span class="caret"></span
 								></a>
 								<ul class="dropdown-menu">
@@ -480,7 +481,7 @@
 											id="viewerDiv1"
 											class="absolute-fill-container openseadragon1"
 										></div>
-										<svg
+										<!-- <svg
 											xmlns="http://www.w3.org/2000/svg"
 											version="1.1"
 											class="imgvwrSVG"
@@ -494,6 +495,17 @@
 												class="imgvwrSVGAnnoGroup"
 												data-bind="attr: {transform:annoGroupTransform}"
 											>
+												<switch>
+													<foreignObject x="50" y="50" width="160" height="160" cursor="move" pointer-events="none">
+														<div xmlns="http://www.w3.org/1999/xhtml">
+															Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+															Sed mollis mollis mi ut ultricies. Nullam magna ipsum,
+															porta vel dui convallis, rutrum imperdiet eros. Aliquam
+															erat volutpat.
+														</div>
+													</foreignObject>
+													<text x="50" y="50" stroke="yellow">NOT SUPPORTED</text>
+												</switch>
 												<g id="sampleanno" transform="translate(-50,-50)">
 													<circle
 														cx="50"
@@ -503,6 +515,7 @@
 														pointer-events="visiblePainted"
 														stroke="yellow"
 														stroke-width="1"
+														vector-effect="non-scaling-stroke"
 														fill="none"
 													></circle>
 													<rect
@@ -511,10 +524,11 @@
 														y="0"
 														width="4"
 														height="4"
-														cursor="pointer"
+														cursor="nwse-resize"
 														pointer-events="visiblePainted"
 														stroke="yellow"
 														stroke-width="1"
+														vector-effect="non-scaling-stroke"
 														fill="transparent"
 													></rect>
 													<rect
@@ -523,10 +537,11 @@
 														y="0"
 														width="4"
 														height="4"
-														cursor="pointer"
+														cursor="nesw-resize"
 														pointer-events="visiblePainted"
 														stroke="yellow"
 														stroke-width="1"
+														vector-effect="non-scaling-stroke"
 														fill="transparent"
 													></rect>
 													<rect
@@ -535,10 +550,11 @@
 														y="96"
 														width="4"
 														height="4"
-														cursor="pointer"
+														cursor="nesw-resize"
 														pointer-events="visiblePainted"
 														stroke="yellow"
 														stroke-width="1"
+														vector-effect="non-scaling-stroke"
 														fill="transparent"
 													></rect>
 													<rect
@@ -547,15 +563,16 @@
 														y="96"
 														width="4"
 														height="4"
-														cursor="pointer"
+														cursor="nwse-resize"
 														pointer-events="visiblePainted"
 														stroke="yellow"
 														stroke-width="1"
+														vector-effect="non-scaling-stroke"
 														fill="transparent"
 													></rect>
 												</g>
 											</g>
-										</svg>
+										</svg> -->
 										<div class="navbar-inner navigatorExpander">
 											<div class="expanderWrapper">
 												<div class="expanderHeaderContainer expanderToggle">
